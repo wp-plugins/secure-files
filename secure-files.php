@@ -4,7 +4,7 @@ Plugin Name: Secure Files
 Plugin URI: http://www.almosteffortless.com/wordpress/
 Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. When used in conjunction with a plugin that requires a user to be logged in to see your site, you can restrict file downloads to users that are logged in. It can be found in Manage -> Secure Files.
 Author: Trevor Turk
-Version: 1.3.1
+Version: 1.3.2
 Author URI: http://www.almosteffortless.com/
 */ 
 
@@ -162,9 +162,9 @@ Author URI: http://www.almosteffortless.com/
 			      $filelist[] = $file;
 			    }
 			  } 
-			natcasesort($dir);
+			closedir($dir);
 			}
-			asort($filelist);
+			natcasesort($filelist);
 			echo '<ul style="margin:0;padding:0;">';
 			while (list ($key, $val) = each ($filelist)) {
 				echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$val'>$val</a>";
