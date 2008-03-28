@@ -4,7 +4,7 @@ Plugin Name: Secure Files
 Plugin URI: http://www.almosteffortless.com/wordpress/
 Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. When used in conjunction with a plugin that requires a user to be logged in to see your site, you can restrict file downloads to users that are logged in. It can be found in Manage -> Secure Files.
 Author: Trevor Turk
-Version: 1.2
+Version: 1.3
 Author URI: http://www.almosteffortless.com/
 */ 
 
@@ -156,19 +156,23 @@ Author URI: http://www.almosteffortless.com/
 		
 		// get files in the secure directory
 		if (is_dir($sf_directory)) {
-			if ($handle = opendir($sf_directory)) {
-				echo '<ul style="margin:0;padding:0;">';
-				while (false !== ($file = readdir($handle))) {
-					if ($file != "." && $file != "..") {
-						echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$file'>$file</a>";
-						echo "&nbsp;&nbsp;<a href=\"javascript:toggle('sf_toggle_$file')\" style='color:gray;'>&raquo</a>";
-						echo "<ul id=\"sf_toggle_$file\" style='display:none;list-style-type:none;color:gray;padding-top:6px;'><li><small>Download Link: &lt;a href=\"?$sf_prefix=$file\"&gt;$file&lt;/a&gt;</small></li>";
-						echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$file\" alt=\"$file\" /&gt;</small></li></ul></li>";
-					}
-				}
-			echo '</ul>';
-			closedir($handle);
+			if ($dir = @opendir($sf_directory)) {
+			  while (($file = readdir($dir)) !== false) {
+			    if($file != ".." && $file != ".") {
+			      $filelist[] = $file;
+			    }
+			  } 
+			closedir($dir);
 			}
+			asort($filelist);
+			echo '<ul style="margin:0;padding:0;">';
+			while (list ($key, $val) = each ($filelist)) {
+				echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$val'>$val</a>";
+				echo "&nbsp;&nbsp;<a href=\"javascript:toggle('sf_toggle_$val')\" style='color:gray;'>&raquo</a>";
+				echo "<ul id=\"sf_toggle_$val\" style='display:none;list-style-type:none;color:gray;padding-top:6px;'><li><small>Download Link: &lt;a href=\"?$sf_prefix=$val\"&gt;$val&lt;/a&gt;</small></li>";
+				echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$val\" alt=\"$val\" /&gt;</small></li></ul></li>";
+			}
+			echo '</ul>';
 		}
 		
 		echo '</td></tr></table>';	
