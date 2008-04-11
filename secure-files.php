@@ -4,7 +4,7 @@ Plugin Name: Secure Files
 Plugin URI: http://www.almosteffortless.com/wordpress/
 Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. It can be used to can restrict file downloads to users that are logged in, or have a certain user level. [Manage -> Secure Files]
 Author: Trevor Turk
-Version: 1.5
+Version: 1.5.1
 Author URI: http://www.almosteffortless.com/
 */ 
 
@@ -46,7 +46,7 @@ Author URI: http://www.almosteffortless.com/
 		if ( isset($_FILES['sf_upload']) ) {
 			$sf_directory = get_option('sf_directory');
 			$sf_prefix = get_option('sf_prefix');
-			$_FILES['sf_upload']['name'] = preg_replace("/[^a-z0-9-]/", "_", strtolower($_FILES['sf_upload']['name']));
+			$_FILES['sf_upload']['name'] = preg_replace("/[^a-z0-9-.]/", "_", strtolower($_FILES['sf_upload']['name']));
 			$uploadfile = $sf_directory . $_FILES['sf_upload']['name'];
 			$file = $_FILES['sf_upload']['name'];
 				if (@move_uploaded_file($_FILES['sf_upload']['tmp_name'], $uploadfile)) {
@@ -185,7 +185,7 @@ Author URI: http://www.almosteffortless.com/
 		
 		echo '<h2>Upload</h2>';
 		
-		echo '<form name="sf_upload" action="" method="post" enctype="multipart/form-data">';
+		echo '<form name="sf_upload" action="' . $sfwp_url . '" method="post" enctype="multipart/form-data">';
 		echo '<table width="100%" cellspacing="2" cellpadding="5" class="editform"><tr>';
 		echo '<th width="20%" valign="top" scope="row">Upload a File: </th><td>';
 		echo '<input type="file" name="sf_upload" id="sf_upload" size="35" class="uploadform" />';
