@@ -2,9 +2,9 @@
 /*
 Plugin Name: Secure Files
 Plugin URI: http://www.almosteffortless.com/wordpress/
-Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. When used in conjunction with a plugin that requires a user to be logged in to see your site, you can restrict file downloads to users that are logged in. It can be found in Manage -> Secure Files.
+Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. It can be used to can restrict file downloads to users that are logged in, or have a certain user level. [Manage -> Secure Files]
 Author: Trevor Turk
-Version: 1.3.3
+Version: 1.5
 Author URI: http://www.almosteffortless.com/
 */ 
 
@@ -35,7 +35,10 @@ Author URI: http://www.almosteffortless.com/
 			$sf_prefix = $_POST['sf_prefix'];
 			update_option('sf_prefix', $sf_prefix, '','');
 		}
-	
+		if ( isset($_POST['sf_level']) ) {
+			$sf_level = $_POST['sf_level'];
+			update_option('sf_level', $sf_level, '','');
+		}
 	}
 		
 	// uploading files
@@ -43,6 +46,7 @@ Author URI: http://www.almosteffortless.com/
 		if ( isset($_FILES['sf_upload']) ) {
 			$sf_directory = get_option('sf_directory');
 			$sf_prefix = get_option('sf_prefix');
+			$_FILES['sf_upload']['name'] = preg_replace("/[^a-z0-9-]/", "_", strtolower($_FILES['sf_upload']['name']));
 			$uploadfile = $sf_directory . $_FILES['sf_upload']['name'];
 			$file = $_FILES['sf_upload']['name'];
 				if (@move_uploaded_file($_FILES['sf_upload']['tmp_name'], $uploadfile)) {
@@ -65,6 +69,13 @@ Author URI: http://www.almosteffortless.com/
 	function sf_downloads() {
 		$sf_prefix = get_option('sf_prefix');
 		if (isset($_GET["$sf_prefix"])) {
+			$sf_level = get_option('sf_level');
+			if ($sf_level != '') {
+				if (!current_user_can($sf_level)) {
+					echo 'You do not have permission to view this file.';
+					exit;
+				}
+			}
 			$downloadfile = $_GET["$sf_prefix"];
 			$sf_directory = get_option('sf_directory');
 			$downloadfile = $sf_directory . basename($downloadfile);
@@ -84,6 +95,25 @@ Author URI: http://www.almosteffortless.com/
 		}
 	}
 
+	// deleting files
+	function sf_delete() {
+		if ( isset($_GET['delete']) ) {
+			if ( current_user_can('edit_pages') ) {
+				$filename = get_option('sf_directory') . stripslashes($_GET['delete']);
+				if ( (file_exists("$filename")) && (unlink("$filename")) ) {
+					echo '<div class="updated">';
+					echo '<p><b>' . $_GET['delete'] . '</b> was successfully deleted.</p>';
+					echo '</div>';
+				}
+				else { 
+					echo '<div class="updated">';
+					echo '<p>Sorry, there was an error deleting <b>'. $_GET['delete'] .'</b>. Please check your <b>Options</b> and the file you want to delete before trying again.</p>';
+					echo '</div>';				
+				}
+			}
+		}
+	}
+
 	// add javascript toggle to the admin head
 	function sf_admin_head_js() {
 		echo '<script type="text/javascript">function toggle(idname) { if (document.getElementById(idname).style.display == "") { document.getElementById(idname).style.display = "none" } document.getElementById(idname).style.display = (document.getElementById(idname).style.display == "none") ? "block" : "none"; }</script>';
@@ -94,6 +124,9 @@ Author URI: http://www.almosteffortless.com/
 
 	// for adding a entry to the wordpress options table for your secure file directory (outside of the web root)
 	add_option('sf_prefix', 'file_id', 'Choose a prefix to use when downloading your secure files', $autoload);
+	
+	// for setting a minimum user level necessary to access secure files
+	add_option('sf_level', '', 'Choose a minimum user level required for downloading you secure files', $autoload);
 		
 	// for adding an admin menu under Manage -> Secure Files
 	function sf_add_pages() {
@@ -105,8 +138,10 @@ Author URI: http://www.almosteffortless.com/
 		
 		sf_options();
 		sf_uploads();
+		sf_delete();
 		
 		$site_url = get_bloginfo('url');
+		$sfwp_url = get_bloginfo('wpurl') . '/wp-admin/edit.php?page=secure-files.php';
 		
 		// get the secure files directory via get_option() if it has been updated via POST
 		if ( isset($_POST['sf_directory']) ) {
@@ -122,6 +157,14 @@ Author URI: http://www.almosteffortless.com/
 		}
 		else {
 			$sf_prefix = get_option('sf_prefix');
+		}
+		
+		// get the secure files user level via get_option() if it has been updated via POST
+		if ( isset($_POST['sf_level']) ) {
+			$sf_level = $_POST['sf_level'];
+		}
+		else {
+			$sf_level = get_option('sf_level');
 		}
 	
 		// show options update message
@@ -172,7 +215,8 @@ Author URI: http://www.almosteffortless.com/
 				echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$val'>$val</a>";
 				echo "&nbsp;&nbsp;<a href=\"javascript:toggle('sf_toggle_$val')\" style='color:gray;'>&raquo</a>";
 				echo "<ul id=\"sf_toggle_$val\" style='display:none;list-style-type:none;color:gray;padding-top:6px;'><li><small>Download Link: &lt;a href=\"?$sf_prefix=$val\"&gt;$val&lt;/a&gt;</small></li>";
-				echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$val\" alt=\"$val\" /&gt;</small></li></ul></li>";
+				echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$val\" alt=\"$val\" /&gt;</small></li>";
+				echo "<li><small><a href=\"$sfwp_url&amp;delete=$val\">Delete this file</a></small></li></ul></li>";
 			}
 			echo '</ul>';
 		}
@@ -188,7 +232,11 @@ Author URI: http://www.almosteffortless.com/
 		echo '</td></tr>';
 		echo '<tr><th width="20%" valign="top" scope="row">Secure Files Prefix: </th><td>';
 		echo '<input name="sf_prefix" id="sf_prefix" type="text" value="'.$sf_prefix.'" size="20" /> ';
-		echo '<p><small>Choose a prefix to use when downloading your Secure Files from your site. The default is <code>file_id</code> and you\'ll have to update any links you\'ve already put on your site if you change it. Click the <span style="color:gray;">&raquo</span> links to learn how to link to these files or include them as images in a Post or Page.</small></p>';
+		echo '<p><small>Choose a prefix to use when downloading Secure Files from your site. The default is <code>file_id</code> and you\'ll have to update any links you\'ve already put on your site if you change it. Click the <span style="color:gray;">&raquo</span> links to learn how to link to these files or include them as images in a Post or Page.</small></p>';
+		echo '</td></tr>';
+		echo '<tr><th width="20%" valign="top" scope="row">Secure Files User Level: </th><td>';
+		echo '<input name="sf_level" id="sf_level" type="text" value="'.$sf_level.'" size="2" /> ';
+		echo '<p><small>[Optional] Choose a minimum <a href="http://codex.wordpress.org/Roles_and_Capabilities">user level</a> required for downloading Secure Files from your site. Leave blank to allow anyone to download files.</small></p>';
 		echo '</td></tr>';
 		echo '</table>';
 		echo '<p class="submit"><input type="submit" name="Submit" value="Update Options &raquo;" /></p>';
