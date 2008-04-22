@@ -4,7 +4,7 @@ Plugin Name: Secure Files
 Plugin URI: http://www.almosteffortless.com/wordpress/
 Description: This plugin allows you to upload and download files from outside of your web document root for security purposes. It can be used to can restrict file downloads to users that are logged in, or have a certain user level. [Manage -> Secure Files]
 Author: Trevor Turk
-Version: 1.5.3
+Version: 1.5.5
 Author URI: http://www.almosteffortless.com/
 */ 
 
@@ -209,18 +209,23 @@ Author URI: http://www.almosteffortless.com/
 			  } 
 			closedir($dir);
 			}
-			natcasesort($filelist);
-			echo '<ul style="margin:0;padding:0;">';
-			while (list ($key, $val) = each ($filelist)) {
-				echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$val'>$val</a>";
-				echo "&nbsp;&nbsp;<a href=\"javascript:toggle('sf_toggle_$val')\" style='color:gray;'>&raquo</a>";
-				echo "<ul id=\"sf_toggle_$val\" style='display:none;list-style-type:none;color:gray;padding-top:6px;'><li><small>Download Link: &lt;a href=\"?$sf_prefix=$val\"&gt;$val&lt;/a&gt;</small></li>";
-				echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$val\" alt=\"$val\" /&gt;</small></li>";
-				echo "<li><small><a href=\"$sfwp_url&amp;delete=$val\">Delete this file</a></small></li></ul></li>";
-			}
-			echo '</ul>';
-		}
-		
+      if (!$filelist) {
+        echo "No files available for download.";
+      }
+      else {
+  			natcasesort($filelist);
+  			echo '<ul style="margin:0;padding:0;">';
+  			while (list ($key, $val) = each ($filelist)) {
+  				echo "<li style='list-style-type:none;'><a href='$site_url/?$sf_prefix=$val'>$val</a>";
+  				echo "&nbsp;&nbsp;<a href=\"javascript:toggle('sf_toggle_$val')\" style='color:gray;'>&raquo</a>";
+  				echo "<ul id=\"sf_toggle_$val\" style='display:none;list-style-type:none;color:gray;padding-top:6px;'><li><small>Download Link: &lt;a href=\"?$sf_prefix=$val\"&gt;$val&lt;/a&gt;</small></li>";
+  				echo "<li><small>Display Image: &lt;img src=\"?$sf_prefix=$val\" alt=\"$val\" /&gt;</small></li>";
+  				echo "<li><small><a href=\"$sfwp_url&amp;delete=$val\">Delete this file</a></small></li></ul></li>";
+  			}
+  			echo '</ul>';
+  		}
+	  }
+	  
 		echo '</td></tr></table>';	
 		echo '<br /><h2>Options</h2>';
 		
